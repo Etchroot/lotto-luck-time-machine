@@ -1,0 +1,248 @@
+/* 오락실 뽑기 기계 느낌: 짙은 남색 배경 + 금색 강조 */
+:root {
+  --bg: #14163a;
+  --bg-2: #1e2152;
+  --panel: #262a63;
+  --line: #3a3f86;
+  --text: #f4f4ff;
+  --muted: #a9acd6;
+  --gold: #ffcc33;
+  --gold-2: #ff9f1a;
+  --plus: #5ef2a0;
+  --minus: #ff7a8a;
+  /* 실제 로또 공 색 */
+  --r1: #fbc400; --r2: #69c8f2; --r3: #ff7272; --r4: #aaaaaa; --r5: #b0d840;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top, var(--bg-2), var(--bg) 60%);
+  background-attachment: fixed;
+  overflow-x: hidden; /* 화면 흔들림 효과 때문에 가로 스크롤이 생기지 않도록 */
+}
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.app { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+
+/* 상단 */
+.top { text-align: center; position: relative; }
+.top h1 {
+  margin: 8px 0 4px;
+  font-size: clamp(28px, 7vw, 44px);
+  letter-spacing: -0.02em;
+  color: var(--gold);
+  text-shadow: 0 3px 0 var(--gold-2), 0 0 24px rgba(255, 204, 51, 0.35);
+}
+.top p { margin: 0; color: var(--muted); }
+.mute-btn {
+  margin-top: 12px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px;
+}
+
+/* 로또 공 */
+.ball {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-weight: 800; color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow: inset -3px -4px 0 rgba(0, 0, 0, 0.18), inset 3px 3px 0 rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+.ball-sm { width: 30px; height: 30px; font-size: 13px; }
+.ball-md { width: 42px; height: 42px; font-size: 16px; }
+.ball-lg { width: clamp(42px, 12.5vw, 54px); height: clamp(42px, 12.5vw, 54px); font-size: clamp(17px, 5vw, 21px); }
+.r1 { background: var(--r1); } .r2 { background: var(--r2); } .r3 { background: var(--r3); }
+.r4 { background: var(--r4); } .r5 { background: var(--r5); }
+.ball.empty {
+  background: transparent; color: var(--muted); border: 2px dashed var(--line);
+  box-shadow: none; text-shadow: none; font-weight: 400;
+}
+.ball.dim { opacity: 0.25; }
+.ball.bonus { outline: 2px dotted rgba(255, 255, 255, 0.6); outline-offset: 2px; }
+
+/* 뽑기 기계 */
+.machine { position: relative; width: 240px; margin: 28px auto 8px; display: flex; flex-direction: column; align-items: center; }
+.dome {
+  position: relative; width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.06) 45%, rgba(120, 140, 255, 0.12));
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  box-shadow: inset 0 -12px 30px rgba(0, 0, 0, 0.35);
+}
+.dome-ball {
+  position: absolute; width: 34px; height: 34px; border-radius: 50%;
+  box-shadow: inset -3px -4px 0 rgba(0, 0, 0, 0.2), inset 3px 3px 0 rgba(255, 255, 255, 0.4);
+  animation: idle 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.3s);
+}
+@keyframes idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.machine.drawing .dome { animation: dome-shake 0.12s linear infinite; }
+.machine.drawing .dome-ball { animation: tumble 0.5s linear infinite; animation-delay: calc(var(--i) * -0.07s); }
+@keyframes tumble {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(40px, -110px); }
+  50% { transform: translate(-30px, -60px); }
+  75% { transform: translate(20px, -130px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes dome-shake {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+.machine-body {
+  width: 200px; margin-top: -14px; padding: 22px 10px 14px;
+  background: linear-gradient(var(--gold), var(--gold-2));
+  border-radius: 14px 14px 22px 22px;
+  text-align: center; color: #3a2400; font-weight: 800;
+  box-shadow: 0 6px 0 #b86a00;
+}
+.machine-label { display: block; min-height: 1.3em; font-variant-numeric: tabular-nums; }
+.chute { width: 64px; height: 20px; margin: 10px auto 0; background: #3a2400; border-radius: 0 0 20px 20px; }
+
+/* 결과 공이 기계에서 굴러 나옴 */
+.prize-ball {
+  margin-top: 8px; width: 96px; height: 96px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 900; color: #fff; text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  box-shadow: inset -6px -8px 0 rgba(0, 0, 0, 0.2), inset 6px 6px 0 rgba(255, 255, 255, 0.35), 0 0 40px currentColor;
+  animation: drop-out 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.prize-ball.rank-1 { background: var(--r1); color: #fff; box-shadow: 0 0 60px 10px var(--gold), inset -6px -8px 0 rgba(0, 0, 0, 0.2); animation: drop-out 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) both, glow 0.8s ease-in-out 0.9s infinite alternate; }
+.prize-ball.rank-2 { background: var(--r2); }
+.prize-ball.rank-3 { background: var(--r3); }
+.prize-ball.rank-4 { background: var(--r5); }
+.prize-ball.rank-5 { background: var(--r4); }
+.prize-ball.lose { background: #4a4f7a; color: var(--muted); box-shadow: none; animation: drop-out 0.9s ease-out both, droop 1.2s ease-in 0.9s both; }
+@keyframes drop-out {
+  0% { transform: translateY(-80px) scale(0.3); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes glow { to { transform: scale(1.12) rotate(8deg); } }
+@keyframes droop { to { transform: translateY(6px) rotate(-14deg); } }
+
+/* 번호 고르기 */
+.picker-area { margin-top: 20px; text-align: center; }
+.slots { display: flex; justify-content: center; gap: clamp(4px, 1.6vw, 8px); }
+.slot { background: none; border: 0; padding: 0; border-radius: 50%; transition: transform 0.15s; }
+.slot:not(:disabled):hover { transform: translateY(-3px) scale(1.06); }
+.actions { margin: 12px 0; display: flex; justify-content: center; gap: 12px; }
+.text-btn { background: none; border: 0; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; padding: 6px; }
+.check-btn {
+  width: 100%; max-width: 360px; padding: 18px; border: 0; border-radius: 16px;
+  font-size: 20px; font-weight: 900; color: #3a2400;
+  background: linear-gradient(var(--gold), var(--gold-2));
+  box-shadow: 0 6px 0 #b86a00;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.check-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 0 #b86a00; }
+.check-btn:not(:disabled):active { transform: translateY(4px); box-shadow: 0 2px 0 #b86a00; }
+
+/* 번호판 (모달) */
+.picker-backdrop {
+  position: fixed; inset: 0; background: rgba(5, 6, 25, 0.7);
+  display: flex; align-items: flex-end; justify-content: center; z-index: 10;
+  animation: fade 0.15s;
+}
+.picker {
+  width: 100%; max-width: 480px; background: var(--panel);
+  border-radius: 20px 20px 0 0; padding: 16px 16px 20px; text-align: center;
+  animation: slide-up 0.2s ease-out;
+}
+@media (min-width: 600px) { .picker-backdrop { align-items: center; } .picker { border-radius: 20px; } }
+.picker-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.picker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; justify-items: center; margin-bottom: 8px; }
+.picker-cell { background: none; border: 0; padding: 2px; border-radius: 50%; }
+.picker-cell[aria-pressed='true'] .ball { outline: 3px solid #fff; outline-offset: 2px; }
+.picker-cell:not(:disabled):hover .ball { transform: scale(1.12); }
+.picker-cell .ball {
+  transition: transform 0.1s;
+  width: clamp(32px, 9.6vw, 42px); height: clamp(32px, 9.6vw, 42px); font-size: clamp(13px, 3.8vw, 16px);
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes slide-up { from { transform: translateY(40px); opacity: 0; } }
+
+/* 결과 요약 */
+.result-area { margin-top: 32px; scroll-margin-top: 16px; }
+.summary {
+  background: var(--panel); border: 2px solid var(--line); border-radius: 20px;
+  padding: 24px 16px; text-align: center;
+  animation: pop-in 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.summary.rank-1 { border-color: var(--gold); box-shadow: 0 0 40px rgba(255, 204, 51, 0.4); }
+@keyframes pop-in { from { transform: scale(0.85); opacity: 0; } }
+.summary-title { margin: 0 0 16px; font-size: clamp(20px, 5vw, 26px); font-weight: 900; color: var(--gold); }
+.summary.lose .summary-title { color: var(--muted); }
+.summary-big { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+.summary-big > div { background: var(--bg); border-radius: 14px; padding: 14px 8px; }
+.big-label { display: block; color: var(--muted); font-size: 14px; margin-bottom: 4px; }
+.big-value {
+  display: block; font-size: clamp(30px, 8vw, 48px); font-weight: 900;
+  font-variant-numeric: tabular-nums; line-height: 1.1; word-break: keep-all;
+}
+.big-value small { font-size: 0.45em; margin-left: 2px; color: var(--muted); }
+.big-value.money { color: var(--gold); }
+@media (max-width: 480px) { .summary-big { grid-template-columns: 1fr; } }
+.rank-chips { list-style: none; padding: 0; margin: 16px 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+.rank-chips li { padding: 4px 10px; border-radius: 999px; background: var(--bg); color: var(--muted); font-size: 14px; }
+.rank-chips li.on { background: var(--gold); color: #3a2400; }
+.summary-net { margin: 8px 0 4px; color: var(--muted); }
+.summary-net b { color: var(--text); }
+.summary-net .plus { color: var(--plus); }
+.summary-net .minus { color: var(--minus); }
+.summary-comment { margin: 0; font-style: italic; }
+
+/* 회차별 기록 */
+.rounds h2 { font-size: 20px; margin: 32px 0 12px; }
+.rounds h2 small { font-size: 14px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+.rounds ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.round { background: var(--panel); border-radius: 14px; padding: 12px 14px; border-left: 5px solid var(--line); }
+.round.rank-1 { border-left-color: var(--r1); }
+.round.rank-2 { border-left-color: var(--r2); }
+.round.rank-3 { border-left-color: var(--r3); }
+.round.rank-4 { border-left-color: var(--r5); }
+.round-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.round-no { font-weight: 800; }
+.round-date { color: var(--muted); font-size: 14px; }
+.rank-badge { margin-left: auto; background: var(--bg); padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: 14px; }
+.round.rank-1 .rank-badge { background: var(--gold); color: #3a2400; }
+.round-balls { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.plus-sign { color: var(--muted); margin: 0 2px; }
+.round-prize { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.round-prize b { color: var(--gold); font-size: 17px; font-variant-numeric: tabular-nums; }
+.round-prize span { color: var(--muted); font-size: 13px; }
+.more-btn {
+  display: block; width: 100%; margin-top: 12px; padding: 12px;
+  background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 12px;
+}
+.empty { text-align: center; color: var(--muted); margin-top: 24px; }
+
+.foot { margin-top: 48px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
+.foot p { margin: 4px 0; }
+
+/* 결과 이펙트: 화면 흔들림. 등수가 높을수록 세게. */
+.shake-1 { animation: shake 0.09s linear 10; --amp: 10px; }
+.shake-2 { animation: shake 0.09s linear 7; --amp: 7px; }
+.shake-3 { animation: shake 0.09s linear 5; --amp: 5px; }
+.shake-4, .shake-5 { animation: shake 0.1s linear 3; --amp: 3px; }
+.shake-lose { animation: sink 1.4s ease-in-out; }
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(var(--amp), calc(var(--amp) * -1)); }
+  75% { transform: translate(calc(var(--amp) * -1), var(--amp)); }
+}
+@keyframes sink { 50% { filter: grayscale(0.9) brightness(0.7); } }
+
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
